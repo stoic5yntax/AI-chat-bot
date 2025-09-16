@@ -3,17 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI CHAT BOT</title>
+    <title>AI Chatbot</title>
+
+    <!-- Styles -->
     <link rel="stylesheet" href="style.css" />
+
+    <!-- Highlight.js Theme (GitHub Dark) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+    />
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script defer src="script.js" type="module"></script>
   </head>
   <body>
     <!-- HEADER -->
     <header class="header">
-      <h1>AI chatbot</h1>
+      <h1>AI Chatbot</h1>
       <p>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime modi
-        voluptate recusandae reprehenderit quasi nostrum.
+        Your personal AI assistant — ask me anything and I’ll respond to all
+        your queries...
       </p>
     </header>
 
@@ -21,12 +33,12 @@
     <main class="chatbox" id="chatbox">
       <div class="message bot-message">
         <span class="message-text"
-          >Hi there! My name is bot, how can I help you?</span
+          >👋 Hi there! I’m your AI assistant. How can I help you today?</span
         >
       </div>
-
-      <!-- Dynamic content -->
+      <!-- Dynamic content will be added here -->
     </main>
+
     <!-- FOOTER -->
     <footer class="footer">
       <form action="#" id="chatbox-form">
@@ -37,21 +49,12 @@
         ></textarea>
 
         <div class="button--container">
-          <button id="emoji-btn">
-            <i class="bi bi-emoji-smile-fill"></i>
-          </button>
-          <div class="attach-container">
-            <input type="file" accept="images/*" id="file-input" hidden />
-            <button id="attach-btn">
-              <i class="bi bi-paperclip"></i>
-            </button>
-          </div>
           <button id="send-btn" type="submit">
             <i class="bi bi-send"></i>
           </button>
         </div>
       </form>
-      <span>Create by @Raj Changappa</span>
+      <span>Created by @Raj Changappa</span>
     </footer>
   </body>
 </html>
