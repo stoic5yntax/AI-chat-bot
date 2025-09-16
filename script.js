@@ -1,22 +1,19 @@
 import { API_KEY } from "./config.js";
+
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-/* ==== DOM ELEMENTS ==== */
-const sendBtn = document.getElementById("send-btn");
-const attachBtn = document.getElementById("attach-btn");
-const chatboxInput = document.getElementById("chatbox-input");
+// ==== DOM ELEMENTS ====
 const chatboxContainer = document.getElementById("chatbox");
-const fileInput = document.getElementById("file-input");
+const chatboxForm = document.getElementById("chatbox-form");
+const chatboxInput = document.getElementById("chatbox-input");
+const sendBtn = document.getElementById("send-btn");
 
-const userData = {
-  message: null,
-  file: {
-    data: null,
-    mime_type: null,
-  },
-};
+// ==== STATE ====
+let userMessage = "";
 
-/* ==== FUNCTIONS ==== */
+// ==== HELPERS ====
+
+// Create a message bubble
 const createMessageElement = (content, classes) => {
   const messageElement = document.createElement("div");
   messageElement.classList.add("message", classes);
@@ -24,7 +21,30 @@ const createMessageElement = (content, classes) => {
   return messageElement;
 };
 
-const getUserRequest = async (botMessageContainer) => {
+// Scroll chat to bottom
+const scrollToBottom = () => {
+  chatboxContainer.scrollTop = chatboxContainer.scrollHeight;
+};
+
+// Render Markdown with Highlight.js
+const renderMarkdownWithHighlight = (text) => {
+  const html = marked.parse(text, {
+    breaks: true,
+  });
+
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = html;
+
+  // Apply syntax highlighting
+  tempDiv.querySelectorAll("pre code").forEach((block) => {
+    hljs.highlightElement(block);
+  });
+
+  return tempDiv.innerHTML;
+};
+
+// ==== API CALL ====
+const fetchResponse = async (botMessageContainer) => {
   try {
     const response = await fetch(API_URL, {
       method: "POST",
@@ -32,87 +52,66 @@ const getUserRequest = async (botMessageContainer) => {
       body: JSON.stringify({
         contents: [
           {
-            parts: [
-              {
-                text: userData.message,
-              },
-            ],
+            parts: [{ text: userMessage }],
           },
         ],
       }),
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error.message);
-    // get Gemini's response
-    const responseText = data.candidates[0].content.parts[0].text.trim();
-    console.log(responseText);
+    if (!response.ok) throw new Error(data.error?.message || "API error");
 
-    // Remove thinking animation and show the final message
-    botMessageContainer.innerHTML = ""; // clear the bot container
-    const botText = document.createElement("span");
-    botText.classList.add("message-text");
-    botText.textContent = responseText;
-    botMessageContainer.appendChild(botText);
+    const responseText =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+      "⚠️ No response from AI";
+
+    botMessageContainer.innerHTML = `
+      <div class="message-text">
+        ${renderMarkdownWithHighlight(responseText)}
+      </div>
+    `;
   } catch (error) {
-    console.log(error);
-    botMessageContainer.innerHTML = ""; // clear thinking
-    const errorText = document.createElement("span");
-    errorText.classList.add("message-text");
-    errorText.textContent = "Oops! Something went wrong.";
-    botMessageContainer.appendChild(errorText);
+    console.error(error);
+    botMessageContainer.innerHTML =
+      '<span class="message-text">⚠️ Oops! Something went wrong.</span>';
+  } finally {
+    scrollToBottom();
   }
 };
 
+// ==== HANDLERS ====
 const handleUserMessage = (e) => {
   e.preventDefault();
-  const userMessage = chatboxInput.value.trim();
+  userMessage = chatboxInput.value.trim();
   if (!userMessage) return;
-  userData.message = userMessage;
-  chatboxInput.value = "";
 
+  // Add user message
   const userMessageContainer = createMessageElement(
-    `<span class="message-text">${userData.message}</span>`,
+    `<span class="message-text">${userMessage}</span>`,
     "user-message"
   );
   chatboxContainer.appendChild(userMessageContainer);
 
-  // Display bot thinking animation
+  // Add bot loading message
   const botMessageContainer = createMessageElement(
-    `<div class="bot-thinking">
-        <span></span><span></span><span></span>
-     </div>`,
+    `<span class="message-text loading-dots"><span>•</span><span>•</span><span>•</span>`,
     "bot-message"
   );
   chatboxContainer.appendChild(botMessageContainer);
 
-  // Scroll to bottom
-  chatboxContainer.scrollTop = chatboxContainer.scrollHeight;
-  // Call Gemini API
-  getUserRequest(botMessageContainer);
+  scrollToBottom();
+  chatboxInput.value = "";
+  fetchResponse(botMessageContainer);
 };
 
-/* ==== EVENT LISTENERS ==== */
+// ==== EVENT LISTENERS ====
+chatboxForm.addEventListener("submit", handleUserMessage);
+
 chatboxInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") handleUserMessage(e);
-});
-sendBtn.addEventListener("click", (e) => handleUserMessage(e));
-
-fileInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const base64String = e.target.result.split(",")[1];
-    userData.file = {
-      data: base64String,
-      mime_type: file.type,
-    };
-    fileInput.value = "";
-  };
-
-  reader.readAsDataURL(file);
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    handleUserMessage(e);
+  }
 });
 
-attachBtn.addEventListener("click", () => fileInput.click());
+sendBtn.addEventListener("click", handleUserMessage);
